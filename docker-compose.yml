@@ -1,0 +1,79 @@
+version: "3"
+
+services:
+  galera-1:
+    image: bitnami/mariadb-galera:10.5
+    #ports:
+      #- '3306:3306'
+      #- '4444:4444'
+      #- '4567:4567'
+      #- '4568:4568'
+    #volumes:
+    #  - galera-1/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
+    env_file:
+      - .env
+    environment:
+      - MARIADB_GALERA_CLUSTER_BOOTSTRAP=1
+      - MARIADB_GALERA_CLUSTER_ADDRESS="gcomm://"   # Galera cluster address to join. Defaults to gcomm:// on a bootstrap node.
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb-galera/healthcheck.sh']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  galera-2:
+    image: bitnami/mariadb-galera:10.5
+    #ports:
+      #- '3306:3306'
+      #- '4444:4444'
+      #- '4567:4567'
+      #- '4568:4568'
+    #volumes:
+    #  - galera-2/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
+    env_file:
+      - .env
+    environment:
+      - MARIADB_GALERA_CLUSTER_ADDRESS="gcomm://galera-1:4567,galera-2:4567"    # Galera cluster address to join. Defaults to gcomm:// on a bootstrap node.
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb-galera/healthcheck.sh']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      galera-1:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  garbd:
+    build: ./galera-arbitrator
+    image: garbd:latest
+    #hostname: garbd
+    #ports:
+      #- '4567:4567'
+    #volumes:
+    #  - garbd/data:/tmp  # this directory should have 777 mode
+    env_file:
+      - .env
+    environment:
+      - MARIADB_GALERA_CLUSTER_ADDRESS="gcomm://galera-1:4567,galera-2:4567"
+    depends_on:
+      galera-1:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
