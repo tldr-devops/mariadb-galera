@@ -3,13 +3,15 @@ version: "3"
 services:
   galera-1:
     image: bitnami/mariadb-galera:10.5
+    hostname: galera-1
     #ports:
       #- '3306:3306'
       #- '4444:4444'
       #- '4567:4567'
       #- '4568:4568'
-    #volumes:
-    #  - galera-1/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
+    volumes:
+       - ./maxscale/bootstrap.sql:/docker-entrypoint-initdb.d/bootstrap.sql:ro
+    #  - ./galera-1/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
     env_file:
       - .env
     environment:
@@ -29,13 +31,14 @@ services:
 
   galera-2:
     image: bitnami/mariadb-galera:10.5
+    hostname: galera-2
     #ports:
       #- '3306:3306'
       #- '4444:4444'
       #- '4567:4567'
       #- '4568:4568'
     #volumes:
-    #  - galera-2/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
+    #  - ./galera-2/data:/bitnami/mariadb  # this directory should have root user and group id or 777 mode
     env_file:
       - .env
     environment:
@@ -58,15 +61,37 @@ services:
   garbd:
     build: ./galera-arbitrator
     image: garbd:latest
-    #hostname: garbd
+    hostname: garbd
     #ports:
       #- '4567:4567'
     #volumes:
-    #  - garbd/data:/tmp  # this directory should have 777 mode
+    #  - ./garbd/data:/tmp  # this directory should have 777 mode
     env_file:
       - .env
     environment:
       - MARIADB_GALERA_CLUSTER_ADDRESS="gcomm://galera-1:4567,galera-2:4567"
+    depends_on:
+      galera-1:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  maxscale:
+    build: ./maxscale
+    image: maxscale:latest
+    # image: mariadb/maxscale
+    hostname: maxscale
+    #ports:
+      #- '3306:3306'
+      #- '8989:8989'
+    volumes:
+      - ./maxscale/maxscale.cnf:/etc/maxscale.cnf:ro
+    #env_file:
+    #  - .env
     depends_on:
       galera-1:
         condition: service_healthy

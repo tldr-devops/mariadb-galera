@@ -1,0 +1,46 @@
+# https://mariadb.com/kb/en/mariadb-maxscale-24-mariadb-maxscale-configuration-guide/
+
+# Globals
+[maxscale]
+threads=auto
+
+# this enables external access to the REST API outside of localhost
+# please review / modify for any public / non development environments
+# admin_host=0.0.0.0
+
+# Servers
+[server1]
+type=server
+address=galera-1
+port=3306
+protocol=MariaDBBackend
+
+[server2]
+type=server
+address=galera-2
+port=3306
+protocol=MariaDBBackend
+
+[Galera-Monitor]
+type=monitor
+module=galeramon
+servers=server1,server2
+user=replication
+password=replication
+monitor_interval=1000
+
+# Galera router service
+[Galera-Service]
+type=service
+router=readwritesplit
+servers=server1,server2
+user=replication
+password=replication
+enable_root_user=true
+
+# Galera cluster listener
+[Galera-Listener]
+type=listener
+service=Galera-Service
+protocol=MySQLClient
+port=3306
