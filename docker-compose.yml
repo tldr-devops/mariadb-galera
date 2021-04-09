@@ -90,8 +90,8 @@ services:
       #- '8989:8989'
     volumes:
       - ./maxscale/maxscale.cnf:/etc/maxscale.cnf:ro
-    #env_file:
-    #  - .env
+    env_file:
+      - .env
     depends_on:
       galera-1:
         condition: service_healthy

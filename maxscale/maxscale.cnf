@@ -2,6 +2,7 @@
 
 # Globals
 [maxscale]
+substitute_variables=true
 threads=auto
 
 # this enables external access to the REST API outside of localhost
@@ -25,8 +26,8 @@ protocol=MariaDBBackend
 type=monitor
 module=galeramon
 servers=server1,server2
-user=replication
-password=replication
+user=$MARIADB_REPLICATION_USER
+password=$MARIADB_REPLICATION_PASSWORD
 monitor_interval=1000
 
 # Galera router service
@@ -34,8 +35,8 @@ monitor_interval=1000
 type=service
 router=readwritesplit
 servers=server1,server2
-user=replication
-password=replication
+user=$MARIADB_REPLICATION_USER
+password=$MARIADB_REPLICATION_PASSWORD
 enable_root_user=true
 
 # Galera cluster listener
